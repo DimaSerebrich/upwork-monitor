@@ -1,0 +1,20 @@
+# Secrets
+.env
+
+# Runtime state
+state/
+*.lock
+
+# Logs
+logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Debug files
+debug_client.log
