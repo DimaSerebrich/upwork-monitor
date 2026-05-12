@@ -1,10 +1,10 @@
 #!/bin/bash
-# Install systemd timers for Upwork Monitor
+# Install systemd timers for Upwork Monitor.
 # Usage: sudo bash setup_timers.sh
 #
-# Creates 8 timers (upwork-monitor-0 … upwork-monitor-7)
-# Each runs every 60 minutes, staggered 7 minutes apart.
-# Effective check interval: ~7 minutes across all 8 search URLs.
+# Automatically reads the number of search URLs from settings.py
+# and creates one timer per URL, staggered evenly across 60 minutes.
+# Effective check interval = 60 / N minutes.
 
 set -e
 
@@ -21,16 +21,29 @@ if [[ ! -f "$SCRIPT_DIR/.env" ]]; then
   echo "Warning: .env not found. Copy .env.example to .env and fill in your values."
 fi
 
-# Remove old timers
-for i in $(seq 0 9); do
+# Count search URLs from settings.py
+URL_COUNT=$("$PYTHON" -c "from settings import SEARCH_URLS; print(len(SEARCH_URLS))" 2>/dev/null)
+if [[ -z "$URL_COUNT" || "$URL_COUNT" -lt 1 ]]; then
+  echo "Error: could not read SEARCH_URLS from settings.py"
+  exit 1
+fi
+
+# Stagger offset (minutes) between timers
+OFFSET_STEP=$(( 60 / URL_COUNT ))
+[[ "$OFFSET_STEP" -lt 1 ]] && OFFSET_STEP=1
+
+echo "Found $URL_COUNT search URLs — stagger interval: ${OFFSET_STEP}min"
+
+# Remove all existing timers (0-19)
+for i in $(seq 0 19); do
   systemctl disable --now "upwork-monitor-${i}.timer" 2>/dev/null || true
   rm -f "/etc/systemd/system/upwork-monitor-${i}.timer"
   rm -f "/etc/systemd/system/upwork-monitor-${i}.service"
 done
 
 # Create new timers
-for i in 0 1 2 3 4 5 6 7; do
-  OFFSET=$((i * 7))
+for i in $(seq 0 $(( URL_COUNT - 1 ))); do
+  OFFSET=$(( i * OFFSET_STEP ))
 
   cat > "/etc/systemd/system/upwork-monitor-${i}.service" << EOF
 [Unit]
@@ -65,11 +78,11 @@ done
 
 systemctl daemon-reload
 
-for i in 0 1 2 3 4 5 6 7; do
+for i in $(seq 0 $(( URL_COUNT - 1 ))); do
   systemctl enable --now "upwork-monitor-${i}.timer"
 done
 
 echo ""
-echo "✅ Done! Installed 8 timers."
+echo "✅ Done! Installed ${URL_COUNT} timers (check interval: ~${OFFSET_STEP}min)."
 echo ""
 systemctl list-timers "upwork-monitor-*" --no-pager

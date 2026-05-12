@@ -29,6 +29,7 @@ from pathlib import Path
 import httpx
 import nodriver as uc
 from dotenv import load_dotenv
+from settings import SEARCH_URLS, SKIP_COUNTRIES, MIN_FIXED_BUDGET, COUNTRY_FLAGS
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -37,35 +38,9 @@ load_dotenv(Path(__file__).parent / ".env")
 TELEGRAM_BOT_TOKEN: str = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHANNEL:   str = os.environ.get("TELEGRAM_CHANNEL", "-5087355913")
 
-BASE_URL   = "https://www.upwork.com"
-STATE_DIR  = Path(__file__).parent / "state"
-LOCK_FILE  = Path(__file__).parent / "monitor.lock"
-
-# Countries to skip (lowercase)
-SKIP_COUNTRIES = {"india", "bangladesh", "pakistan"}
-
-# Fixed-price jobs below this budget are skipped
-MIN_FIXED_BUDGET = 1000
-
-# Search URLs — one per systemd timer index (0-based)
-SEARCH_URLS = [
-    "https://www.upwork.com/nx/search/jobs/?contractor_tier=1,2,3&hourly_rate=25-&job_type=hourly,fixed&q=Python%20Backend%20Developer%20RestAPI%20Rest%20API&sort=recency&t=0,1",
-    "https://www.upwork.com/nx/search/jobs/?contractor_tier=1,2,3&hourly_rate=25-&job_type=hourly,fixed&q=FastAPI%20Fast%20API%20Python%20PostgreSQL%20SQL%20Postgres%20Django&sort=recency&t=0,1",
-    "https://www.upwork.com/nx/search/jobs/?contractor_tier=1,2,3&hourly_rate=25-&job_type=hourly,fixed&q=Scrapy%20Scraping%20Scrapping%20Data%20Extraction&sort=recency&t=0,1",
-    "https://www.upwork.com/nx/search/jobs/?contractor_tier=1,2,3&hourly_rate=25-&job_type=hourly,fixed&q=Python%20Automation%20Bots%20Scripts&sort=recency&t=0,1",
-    "https://www.upwork.com/nx/search/jobs/?contractor_tier=1,2,3&hourly_rate=25-&job_type=hourly,fixed&q=React.js%20ReactJS%20React%20Js%20Next.js%20NextJS%20Next%20Js%20Full%20Stack%20FullStack&sort=recency&t=0,1",
-    "https://www.upwork.com/nx/search/jobs/?contractor_tier=1,2,3&hourly_rate=25-&job_type=hourly,fixed&q=ReactNative%20React%20Native%20Mobile%20App&sort=recency&t=0,1",
-    "https://www.upwork.com/nx/search/jobs/?contractor_tier=1,2,3&hourly_rate=25-&job_type=hourly,fixed&q=LLM%20RAG%20AI%20Agent%20LangChain%20LlamaIndex&sort=recency&t=0,1",
-    "https://www.upwork.com/nx/search/jobs/?contractor_tier=1,2,3&hourly_rate=25-&job_type=hourly,fixed&q=Data%20Pipeline%20ETL%20PostgreSQL%20Scraping%20Data%20Engineering&sort=recency&t=0,1",
-]
-
-# Country → flag emoji
-COUNTRY_FLAGS = {
-    "United States": "🇺🇸", "Canada": "🇨🇦", "United Kingdom": "🇬🇧",
-    "Australia": "🇦🇺", "Germany": "🇩🇪", "Netherlands": "🇳🇱",
-    "France": "🇫🇷", "Sweden": "🇸🇪", "Norway": "🇳🇴",
-    "Switzerland": "🇨🇭", "Israel": "🇮🇱", "UAE": "🇦🇪", "Singapore": "🇸🇬",
-}
+BASE_URL  = "https://www.upwork.com"
+STATE_DIR = Path(__file__).parent / "state"
+LOCK_FILE = Path(__file__).parent / "monitor.lock"
 
 
 # ── State (global deduplication) ──────────────────────────────────────────────
